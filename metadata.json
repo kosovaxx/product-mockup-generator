@@ -1,0 +1,5 @@
+{
+  "name": "Raw Photo to Mockup ",
+  "description": "Upload a product photo to automatically extract product and generate a clean shot to post on Instagram and Facebook stories.",
+  "requestFramePermissions": []
+}
