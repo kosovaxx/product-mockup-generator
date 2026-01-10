@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { FileUpload } from './FileUpload';
 import { OptionGroup } from './OptionGroup';

@@ -4,8 +4,8 @@ import { ImageWorkspace } from './components/ImageWorkspace';
 import { getTextContent, generateProductShot, modifyImage, getStyleReferencePrompt, getProductVibePrompt } from './services/geminiService';
 import { Lightbox } from './components/Lightbox';
 import { HistoryPanel } from './components/HistoryPanel';
-import { HistoryIcon, LayersIcon } from './components/icons'; // Added LayersIcon
-import { TextOverlayApp } from './components/TextOverlayApp'; // New component
+import { HistoryIcon, LayersIcon } from './components/icons';
+import { TextOverlayApp } from './components/TextOverlayApp';
 import {
   ASPECT_RATIOS,
   RESOLUTIONS,
@@ -34,20 +34,20 @@ function App() {
   const [isAnalyzingVibe, setIsAnalyzingVibe] = useState(false);
 
   // --- Generation Settings State ---
-  const [addSocialText, setAddSocialText] = useState(false); // Default to false as per new instructions
-  const [aspectRatio, setAspectRatio] = useState(ASPECT_RATIOS[1]); // 4:5
-  const [resolution, setResolution] = useState(RESOLUTIONS[1]); // 1080x1350
-  const [cameraAngle, setCameraAngle] = useState(CAMERA_ANGLES[3]); // 45° hero angle
-  const [lens, setLens] = useState(LENSES[1]); // 50mm
-  const [depthOfField, setDepthOfField] = useState(APERTURES[2]); // f/5.6
-  const [lightingType, setLightingType] = useState(LIGHTING_TYPES[0]); // Natural window light
-  const [lightingDirection, setLightingDirection] = useState(LIGHTING_DIRECTIONS[0]); // Left
-  const [surface, setSurface] = useState(SURFACES[4]); // Marble (white or grey)
-  const [background, setBackground] = useState(BACKGROUNDS[1]); // Off-white studio
-  const [shadow, setShadow] = useState(SHADOWS[0]); // Soft contact shadow
-  const [reflection, setReflection] = useState(REFLECTIONS[0]); // None
-  const [colorStyle, setColorStyle] = useState(COLOR_STYLES[0]); // Neutral
-  const [composition, setComposition] = useState(COMPOSITIONS[0]); // Center framed
+  const [addSocialText, setAddSocialText] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState(ASPECT_RATIOS[1]); // Default to 3:4
+  const [resolution, setResolution] = useState(RESOLUTIONS[1]);
+  const [cameraAngle, setCameraAngle] = useState(CAMERA_ANGLES[3]);
+  const [lens, setLens] = useState(LENSES[1]);
+  const [depthOfField, setDepthOfField] = useState(APERTURES[2]);
+  const [lightingType, setLightingType] = useState(LIGHTING_TYPES[0]);
+  const [lightingDirection, setLightingDirection] = useState(LIGHTING_DIRECTIONS[0]);
+  const [surface, setSurface] = useState(SURFACES[4]);
+  const [background, setBackground] = useState(BACKGROUNDS[1]);
+  const [shadow, setShadow] = useState(SHADOWS[0]);
+  const [reflection, setReflection] = useState(REFLECTIONS[0]);
+  const [colorStyle, setColorStyle] = useState(COLOR_STYLES[0]);
+  const [composition, setComposition] = useState(COMPOSITIONS[0]);
   const [outputPng, setOutputPng] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -67,7 +67,7 @@ function App() {
   const [history, setHistory] = useState<string[]>([]);
 
   // --- API Key State ---
-  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null); // null means not yet checked
+  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
 
   // --- Text Overlay Mode State ---
   const [isTextOverlayMode, setIsTextOverlayMode] = useState(false);
@@ -78,9 +78,8 @@ function App() {
         const keySelected = await window.aistudio.hasSelectedApiKey();
         setHasApiKey(keySelected);
       } else {
-        // Fallback for local development if aistudio API is not available
         console.warn("window.aistudio API not available. Assuming API_KEY is set via environment.");
-        setHasApiKey(true); // Assume true for local development if AISTudio APIs are missing
+        setHasApiKey(true);
       }
     };
     checkKey();
@@ -89,9 +88,8 @@ function App() {
   const handleSelectApiKey = async () => {
     if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
       await window.aistudio.openSelectKey();
-      // As per rules, assume success and proceed. The actual key will be in process.env.API_KEY.
       setHasApiKey(true);
-      setError(null); // Clear any previous API key error
+      setError(null);
     } else {
       setError("AI Studio API for key selection not available.");
     }
@@ -110,7 +108,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // Clear product vibe prompt if product image is cleared
     if (!productImage) {
       setProductVibePrompt(null);
       setIsAnalyzingVibe(false);
@@ -118,35 +115,29 @@ function App() {
   }, [productImage]);
 
   useEffect(() => {
-    // Clear style reference prompt if style reference image is cleared
     if (!styleReferenceImage) {
       setStyleReferencePrompt(null);
       setIsAnalyzingStyle(false);
     }
-    // Disable matchProductVibe if useStyleReference is false
     if (!useStyleReference) {
       setMatchProductVibe(false);
     }
   }, [styleReferenceImage, useStyleReference]);
 
   const addToHistory = (newImage: string) => {
-    const maxHistoryItems = 5; // Reduced from 20 to 5 to mitigate localStorage quota issues
+    const maxHistoryItems = 5;
     const newHistory = [newImage, ...history].slice(0, maxHistoryItems);
     setHistory(newHistory);
     try {
       localStorage.setItem('generationHistory', JSON.stringify(newHistory));
     } catch (e) {
       if (e instanceof DOMException && e.name === 'QuotaExceededError') {
-        console.warn("localStorage quota exceeded. Clearing history from localStorage to free space.");
-        localStorage.removeItem('generationHistory'); // Clear the problematic entry
-        setError("History storage full. Only current session history will be kept."); // Set a user-facing error
+        localStorage.removeItem('generationHistory');
+        setError("History storage full. Only current session history will be kept.");
       } else {
         console.error("Failed to save history to localStorage:", e);
-        setError("Failed to save history."); // Generic error
+        setError("Failed to save history.");
       }
-      // Note: The in-memory `history` state is still updated, so it works for the current session.
-      // This ensures the user doesn't lose history *immediately* within the same tab,
-      // but it won't persist if the tab is closed/reloaded.
     }
   };
 
@@ -166,7 +157,7 @@ function App() {
   
   const handleSetStyleReferenceImage = async (img: string | null) => {
     setStyleReferenceImage(img);
-    setStyleReferencePrompt(null); // Clear previous prompt
+    setStyleReferencePrompt(null);
     if (img) {
       setIsAnalyzingStyle(true);
       setError(null);
@@ -185,7 +176,7 @@ function App() {
         const message = err instanceof Error ? err.message : 'An unknown error occurred.';
         if (message.includes("Requested entity was not found.")) { 
           setError("API Key invalid or not found. Please select a valid key.");
-          setHasApiKey(false); // Reset API key selection state
+          setHasApiKey(false);
         } else {
           setError(`Failed to analyze style reference: ${message}`);
         }
@@ -198,7 +189,7 @@ function App() {
   const handleSetProductImage = async (img: string | null) => {
     setProductImage(img);
     clearOutputs();
-    setProductVibePrompt(null); // Clear previous vibe
+    setProductVibePrompt(null);
     if (img) {
       setIsAnalyzingVibe(true);
       setError(null);
@@ -209,7 +200,7 @@ function App() {
         const message = err instanceof Error ? err.message : 'An unknown error occurred.';
         if (message.includes("Requested entity was not found.")) { 
           setError("API Key invalid or not found. Please select a valid key.");
-          setHasApiKey(false); // Reset API key selection state
+          setHasApiKey(false);
         } else {
           setError(`Failed to analyze product vibe: ${message}`);
         }
@@ -229,18 +220,17 @@ function App() {
     clearOutputs();
     
     try {
-      const { extractedText } = await getTextContent(productImage); // Only extract text
+      const { extractedText } = await getTextContent(productImage);
       setExtractedText(extractedText);
-      setInfotainmentText(null); // Ensure infotainment text is always null
 
       const settings = {
         productImageBase64: productImage,
         styleReferenceBase64: useStyleReference ? styleReferenceImage : null,
         styleReferencePrompt: useStyleReference ? styleReferencePrompt : null,
-        matchProductVibe: useStyleReference && matchProductVibe, // Only active if style reference is also used
+        matchProductVibe: useStyleReference && matchProductVibe,
         productVibePrompt: useStyleReference && matchProductVibe ? productVibePrompt : null,
-        addSocialText: false, // Always false as feature is removed
-        infotainmentText: '', // Empty string as feature is removed
+        addSocialText: false,
+        infotainmentText: '',
         aspectRatio,
         resolution,
         cameraAngle,
@@ -259,7 +249,7 @@ function App() {
 
       const { generatedImage, finalImagePrompt, jsonSummary } = await generateProductShot(settings);
 
-      const imageUrl = `data:image/png;base66,${generatedImage}`;
+      const imageUrl = `data:image/png;base64,${generatedImage}`;
       setGeneratedImage(imageUrl);
       setFinalPrompt(finalImagePrompt);
       setJsonSummary(jsonSummary);
@@ -269,7 +259,7 @@ function App() {
       const message = err instanceof Error ? err.message : 'An unknown error occurred.';
       if (message.includes("Requested entity was not found.")) { 
         setError("API Key invalid or not found. Please select a valid key.");
-        setHasApiKey(false); // Reset API key selection state
+        setHasApiKey(false);
       } else {
         setError(`Failed to generate: ${message}`);
       }
@@ -284,7 +274,7 @@ function App() {
     setError(null);
     try {
         const modifiedImage = await modifyImage(baseImageUrl, prompt);
-        const imageUrl = `data:image/png;base66,${modifiedImage}`;
+        const imageUrl = `data:image/png;base64,${modifiedImage}`;
         setGeneratedImage(imageUrl);
         setLightboxImage(imageUrl);
         addToHistory(imageUrl);
@@ -292,7 +282,7 @@ function App() {
         const message = err instanceof Error ? err.message : 'An unknown error occurred.';
         if (message.includes("Requested entity was not found.")) { 
           setError("API Key invalid or not found. Please select a valid key.");
-          setHasApiKey(false); // Reset API key selection state
+          setHasApiKey(false);
         } else {
           setError(`Failed to modify image: ${message}`);
         }
@@ -338,7 +328,6 @@ function App() {
   return (
     <div className="bg-gray-50 text-gray-800 min-h-screen font-sans flex flex-col">
       <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 sticky top-0 z-20 flex items-center justify-between">
-        {/* Left Spacer for alignment */}
         <div className="w-8"> 
           {isTextOverlayMode && (
             <button
@@ -355,7 +344,6 @@ function App() {
         <h1 className="text-2xl font-semibold gradient-text text-center">
           {isTextOverlayMode ? 'Text Overlay Generator' : 'AI Product Mockup Generator'}
         </h1>
-        {/* Right buttons */}
         <div className="flex gap-2">
           <button 
             onClick={() => setIsTextOverlayMode(!isTextOverlayMode)}
@@ -393,10 +381,9 @@ function App() {
                 onMatchProductVibeChange={setMatchProductVibe}
                 productVibePrompt={productVibePrompt}
                 isAnalyzingVibe={isAnalyzingVibe}
-                addSocialText={addSocialText} // Kept for prop but will always be false
-                onAddSocialTextChange={setAddSocialText} // Kept for prop but will always be false
+                addSocialText={addSocialText}
+                onAddSocialTextChange={setAddSocialText}
                 isLoading={isLoading}
-                // Pass all settings
                 settings={{
                   aspectRatio, resolution, cameraAngle, lens, depthOfField,
                   lightingType, lightingDirection, surface, background, shadow,
@@ -420,7 +407,7 @@ function App() {
                 extractedText={extractedText}
                 finalPrompt={finalPrompt}
                 jsonSummary={jsonSummary}
-                addSocialText={false} // Feature removed, always pass false
+                addSocialText={false}
                 onImageClick={(url) => setLightboxImage(url)}
               />
             </div>

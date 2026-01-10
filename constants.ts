@@ -1,5 +1,5 @@
 
-export const ASPECT_RATIOS = ["9:16", "4:5", "1:1", "16:9", "3:2"];
+export const ASPECT_RATIOS = ["1:1", "3:4", "4:3", "9:16", "16:9"];
 
 export const RESOLUTIONS = ["1080x1920", "1080x1350", "1350x1080", "1920x1080", "2048x2048", "4096x4096"];
 
