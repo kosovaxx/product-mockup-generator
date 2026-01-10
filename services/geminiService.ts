@@ -27,7 +27,7 @@ export const getTextContent = async (productImageBase64: string): Promise<{ extr
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-pro-image-preview', // Updated model
       contents: { parts: [imagePart, { text: prompt }] },
       config: {
         responseMimeType: "application/json",
@@ -91,7 +91,7 @@ Return ONLY the JSON object.`;
   
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-pro-image-preview', // Updated model
       contents: { parts: [imagePart, { text: prompt }] },
       config: {
         responseMimeType: "application/json",
@@ -135,7 +135,7 @@ Return ONLY the keywords/phrase, e.g., "fresh, nature, green, water droplets".`;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-pro-image-preview', // Updated model
       contents: { parts: [imagePart, { text: prompt }] },
     });
     return response.text.trim();
@@ -237,7 +237,7 @@ Generate the final image based on all these instructions.`;
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-3-pro-image-preview', // Updated model
             contents: { parts },
             config: {
                 responseModalities: [Modality.IMAGE],
@@ -267,7 +267,7 @@ export const modifyImage = async (baseImageBase64: string, prompt: string): Prom
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-3-pro-image-preview', // Updated model
             contents: { parts },
             config: {
                 responseModalities: [Modality.IMAGE],
@@ -348,7 +348,7 @@ Return ONLY the JSON object conforming to TextLayoutSchema. Ensure all coordinat
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-pro-image-preview', // Updated model
       contents: { parts: [imagePart, { text: prompt }] },
       config: {
         responseMimeType: "application/json",
@@ -432,7 +432,7 @@ Return ONLY the JSON object conforming to ProductInfoSchema.`;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-pro-image-preview', // Updated model
       contents: { parts: [imagePart, { text: prompt }] },
       config: {
         responseMimeType: "application/json",
@@ -527,7 +527,7 @@ Return ONLY the JSON object conforming to GeneratedTextContentSchema.`;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-pro-image-preview', // Updated model
       contents: { parts: [{ text: prompt }] },
       config: {
         responseMimeType: "application/json",
@@ -671,7 +671,7 @@ Return ONLY the final harmonized image with the text overlay.`;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image', // Using image generation model for compositing
+      model: 'gemini-3-pro-image-preview', // Updated model
       contents: { parts: [imagePart, { text: prompt }] },
       config: {
         responseModalities: [Modality.IMAGE],

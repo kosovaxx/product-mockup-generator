@@ -66,8 +66,36 @@ function App() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
 
+  // --- API Key State ---
+  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null); // null means not yet checked
+
   // --- Text Overlay Mode State ---
   const [isTextOverlayMode, setIsTextOverlayMode] = useState(false);
+
+  useEffect(() => {
+    const checkKey = async () => {
+      if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
+        const keySelected = await window.aistudio.hasSelectedApiKey();
+        setHasApiKey(keySelected);
+      } else {
+        // Fallback for local development if aistudio API is not available
+        console.warn("window.aistudio API not available. Assuming API_KEY is set via environment.");
+        setHasApiKey(true); // Assume true for local development if AISTudio APIs are missing
+      }
+    };
+    checkKey();
+  }, []);
+
+  const handleSelectApiKey = async () => {
+    if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
+      await window.aistudio.openSelectKey();
+      // As per rules, assume success and proceed. The actual key will be in process.env.API_KEY.
+      setHasApiKey(true);
+      setError(null); // Clear any previous API key error
+    } else {
+      setError("AI Studio API for key selection not available.");
+    }
+  };
 
   useEffect(() => {
     try {
@@ -102,13 +130,23 @@ function App() {
   }, [styleReferenceImage, useStyleReference]);
 
   const addToHistory = (newImage: string) => {
-    const maxHistoryItems = 20;
+    const maxHistoryItems = 5; // Reduced from 20 to 5 to mitigate localStorage quota issues
     const newHistory = [newImage, ...history].slice(0, maxHistoryItems);
     setHistory(newHistory);
     try {
       localStorage.setItem('generationHistory', JSON.stringify(newHistory));
     } catch (e) {
-      console.error("Failed to save history to localStorage:", e);
+      if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+        console.warn("localStorage quota exceeded. Clearing history from localStorage to free space.");
+        localStorage.removeItem('generationHistory'); // Clear the problematic entry
+        setError("History storage full. Only current session history will be kept."); // Set a user-facing error
+      } else {
+        console.error("Failed to save history to localStorage:", e);
+        setError("Failed to save history."); // Generic error
+      }
+      // Note: The in-memory `history` state is still updated, so it works for the current session.
+      // This ensures the user doesn't lose history *immediately* within the same tab,
+      // but it won't persist if the tab is closed/reloaded.
     }
   };
 
@@ -145,7 +183,12 @@ function App() {
         setStyleReferencePrompt(formattedPrompt);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'An unknown error occurred.';
-        setError(`Failed to analyze style reference: ${message}`);
+        if (message.includes("Requested entity was not found.")) { 
+          setError("API Key invalid or not found. Please select a valid key.");
+          setHasApiKey(false); // Reset API key selection state
+        } else {
+          setError(`Failed to analyze style reference: ${message}`);
+        }
       } finally {
         setIsAnalyzingStyle(false);
       }
@@ -164,7 +207,12 @@ function App() {
         setProductVibePrompt(vibe);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'An unknown error occurred.';
-        setError(`Failed to analyze product vibe: ${message}`);
+        if (message.includes("Requested entity was not found.")) { 
+          setError("API Key invalid or not found. Please select a valid key.");
+          setHasApiKey(false); // Reset API key selection state
+        } else {
+          setError(`Failed to analyze product vibe: ${message}`);
+        }
       } finally {
         setIsAnalyzingVibe(false);
       }
@@ -211,7 +259,7 @@ function App() {
 
       const { generatedImage, finalImagePrompt, jsonSummary } = await generateProductShot(settings);
 
-      const imageUrl = `data:image/png;base64,${generatedImage}`;
+      const imageUrl = `data:image/png;base66,${generatedImage}`;
       setGeneratedImage(imageUrl);
       setFinalPrompt(finalImagePrompt);
       setJsonSummary(jsonSummary);
@@ -219,7 +267,12 @@ function App() {
 
     } catch (err) {
       const message = err instanceof Error ? err.message : 'An unknown error occurred.';
-      setError(`Failed to generate: ${message}`);
+      if (message.includes("Requested entity was not found.")) { 
+        setError("API Key invalid or not found. Please select a valid key.");
+        setHasApiKey(false); // Reset API key selection state
+      } else {
+        setError(`Failed to generate: ${message}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -231,19 +284,57 @@ function App() {
     setError(null);
     try {
         const modifiedImage = await modifyImage(baseImageUrl, prompt);
-        const imageUrl = `data:image/png;base64,${modifiedImage}`;
+        const imageUrl = `data:image/png;base66,${modifiedImage}`;
         setGeneratedImage(imageUrl);
         setLightboxImage(imageUrl);
         addToHistory(imageUrl);
     } catch (err) {
         const message = err instanceof Error ? err.message : 'An unknown error occurred.';
-        setError(`Failed to modify image: ${message}`);
+        if (message.includes("Requested entity was not found.")) { 
+          setError("API Key invalid or not found. Please select a valid key.");
+          setHasApiKey(false); // Reset API key selection state
+        } else {
+          setError(`Failed to modify image: ${message}`);
+        }
         setLightboxImage(null);
     } finally {
         setIsModifying(false);
     }
 };
   
+  if (hasApiKey === null) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="w-16 h-16 border-4 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="ml-4 text-gray-700">Checking API key...</p>
+      </div>
+    );
+  }
+
+  if (!hasApiKey) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4 text-center">
+        <h2 className="text-2xl font-semibold mb-4 text-gray-800">API Key Required</h2>
+        <p className="text-gray-600 mb-6 max-w-md">
+          To use this application, you need to select a paid Google Cloud Project API Key.
+          This enables access to the latest Gemini models.
+        </p>
+        <button
+          onClick={handleSelectApiKey}
+          className="px-8 py-3 bg-gradient-to-r from-[#FF7BDC] to-[#FF4FA8] text-white font-semibold rounded-full hover:scale-102 transition-transform shadow-md"
+        >
+          Select API Key
+        </button>
+        <p className="text-xs text-gray-500 mt-4">
+          <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:underline">
+            Learn more about billing
+          </a>
+        </p>
+        {error && <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-md text-sm mt-4">{error}</div>}
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-50 text-gray-800 min-h-screen font-sans flex flex-col">
       <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 sticky top-0 z-20 flex items-center justify-between">
